@@ -104,19 +104,17 @@ def save_expense(amount, description="Receipt from OCR"):
 def load_expenses():
     conn = sqlite3.connect('expenses.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM expenses ORDER BY date DESC")
+    cursor.execute("SELECT * FROM expenses ORDER BY amount DESC")
     records = cursor.fetchall()
     conn.close()
     
-    # Clear the old content and add a header
-    table_view.delete("1.0", "end")
-    table_view.insert("end", f"{'Date':<20} | {'Description':<20} | {'Amount':<10}\n")
-    table_view.insert("end", "-" * 55 + "\n")
+    # Clear the old data from the treeview
+    for record in table_view.get_children():
+        table_view.delete(record)
     
     # Add each record to the table view
     for record in records:
-        date, desc, amount = record
-        table_view.insert("end", f"{date:<20} | {desc:<20} | ${amount:<9.2f}\n")
+        table_view.insert("", "end", values=record)
 
 
 table_label = ctk.CTkLabel(root, text="All Expenses", font=("Helvetica", 20, "bold"))

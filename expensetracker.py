@@ -2,19 +2,22 @@ from PIL import Image
 import customtkinter as ctk
 import pytesseract
 from tkinter import filedialog, ttk
+from tkcalendar import Calendar
 import re
 import sqlite3
-import datetime
-
+from datetime import datetime
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 root = ctk.CTk()
 root.title("Expense Tracker")
 root.geometry("750x550")
 
+scrollable_frame = ctk.CTkScrollableFrame(root)
+scrollable_frame.pack(fill="both", expand=True)
+
 global text
 
-label = ctk.CTkLabel(root, text="Expense Tracker", font=("Helvetica", 20))
+label = ctk.CTkLabel(scrollable_frame, text="Expense Tracker", font=("Helvetica", 20))
 label.pack()
 
 
@@ -31,12 +34,12 @@ def select_receipt():
         Output.delete("1.0", "end")
         Output.insert("end", text)
     
-select_recipt_button = ctk.CTkButton(root, text="Select a recipt", font=("Helventica", 20), command=select_receipt)
+select_recipt_button = ctk.CTkButton(scrollable_frame, text="Select a recipt", font=("Helventica", 20), command=select_receipt)
 select_recipt_button.pack()
 
-Output = ctk.CTkTextbox(root, width=500, height=300)
-Output.pack()
 
+Output = ctk.CTkTextbox(scrollable_frame, width=500, height=300)
+Output.pack()
 
 def parse_receipt(text):
     """
@@ -74,7 +77,7 @@ def parsing_and_display():
     else:
         Output.insert("end", "Could not find a total amount.")
 
-parse_text = ctk.CTkButton(root, text="Parse", font=("Helventica", 20), command=parsing_and_display)
+parse_text = ctk.CTkButton(scrollable_frame, text="Parse", font=("Helventica", 20), command=parsing_and_display)
 parse_text.pack()
 
 
@@ -95,36 +98,96 @@ def setup_database():
 def save_expense(amount, description="Receipt from OCR"):
     conn = sqlite3.connect('expenses.db')
     cursor = conn.cursor()
-    current_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    current_date = datetime.datetime.now().strftime("%Y-%m-%d")
     cursor.execute("INSERT INTO expenses (date, description, amount) VALUES (?, ?, ?)",
                    (current_date, description, amount))
     conn.commit()
     conn.close()
     
-def load_expenses():
+def load_expenses(search_date=None):
+    """
+    Loads expenses from the database, either all or filtered by a date.
+    If no records are found for the search date, it loads all records.
+    """
     conn = sqlite3.connect('expenses.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM expenses ORDER BY amount DESC")
-    records = cursor.fetchall()
+    
+    records = []
+    # Check if a search date was provided
+    if search_date:
+        # First, try to get records for the specific date.
+        cursor.execute("SELECT * FROM expenses WHERE date LIKE ? ORDER BY date DESC", (search_date + '%',))
+        records = cursor.fetchall()
+    
+    # Check if the list of records is empty. This handles both no search date and a search with no results.
+    if not records:
+        # If no records were found, load all records as a fallback.
+        cursor.execute("SELECT * FROM expenses ORDER BY date DESC")
+        records = cursor.fetchall()
+    
     conn.close()
     
     # Clear the old data from the treeview
     for record in table_view.get_children():
         table_view.delete(record)
     
-    # Add each record to the table view
+    # Group records by date for the daily summary
+    daily_expenses = {}
     for record in records:
-        table_view.insert("", "end", values=record)
+        date_only = record[0].split(' ')[0] # Extract the date part (YYYY-MM-DD)
+        if date_only not in daily_expenses:
+            daily_expenses[date_only] = {'total': 0.0, 'records': []}
+        daily_expenses[date_only]['total'] += record[2]
+        daily_expenses[date_only]['records'].append(record)
+    
+    # Insert the grouped records into the Treeview
+    for date, data in daily_expenses.items():
+        # Create a parent item for each date with the daily total
+        parent_item = table_view.insert("", "end", text=date, open=True, values=(date, "Daily Total:", f"${data['total']:.2f}"))
+        
+        # Insert each individual expense as a child of the date parent
+        for record in data['records']:
+            table_view.insert(parent_item, "end", values=(record[0], record[1], f"${record[2]:.2f}"))
+
+def on_treeview_scroll(event):
+    """
+    Handles mouse wheel events on the treeview to prevent them from bubbling up to the parent.
+    """
+    if event.delta > 0:
+        table_view.yview_scroll(-1, "units")
+    else:
+        table_view.yview_scroll(1, "units")
+    # Return 'break' to stop the event from propagating to the parent frame
+    return "break"
 
 
-table_label = ctk.CTkLabel(root, text="All Expenses", font=("Helvetica", 20, "bold"))
+table_label = ctk.CTkLabel(scrollable_frame, text="All Expenses", font=("Helvetica", 20, "bold"))
 table_label.pack(pady=(10, 5))
 
-table_frame = ctk.CTkFrame(root)
+table_frame = ctk.CTkFrame(scrollable_frame)
 table_frame.pack(pady=5, padx=20, fill="x", expand=True)
 
-table_view = ttk.Treeview(table_frame, columns=("Date", "Description", "Amount"), show="headings")
+table_view = ttk.Treeview(table_frame, columns=("Date", "Description", "Amount"), show="headings", height=15)
 table_view.pack(side="left", fill="both", expand=True)
+table_view.bind("<MouseWheel>", on_treeview_scroll)
+
+# Style the Treeview to match the dark theme
+style = ttk.Style()
+style.theme_use("default") # Use a base theme to build upon
+style.configure("Treeview",
+                background="#2a2d2e",
+                foreground="#fff",
+                rowheight=25,
+                fieldbackground="#343638",
+                bordercolor="#343638",
+                font=("Helvetica", 16)) # Set the font for the data rows
+style.map('Treeview',
+          background=[('selected', '#2b6e6e')])
+style.configure("Treeview.Heading",
+                font=("Helvetica", 12, "bold"),
+                background="#343638",
+                foreground="#fff")
+
 
 table_view.heading("Date", text="Date")
 table_view.heading("Description", text="Description")
@@ -137,6 +200,20 @@ table_view.column("Amount", width=100, anchor="e")
 scrollbar = ctk.CTkScrollbar(table_frame, command=table_view.yview)
 scrollbar.pack(side="right", fill="y")
 table_view.configure(yscrollcommand=scrollbar.set)
+
+CalanderDisplay = Calendar(scrollable_frame, width=150, height=300)
+CalanderDisplay.pack()
+
+def Get_date():
+    selected_date_str = CalanderDisplay.get_date()
+    print(f"{selected_date_str}")
+    date_object = datetime.strptime(selected_date_str, '%m/%d/%y')
+    database_date = date_object.strftime('%Y-%m-%d')
+    load_expenses(search_date=database_date)
+
+Search_date = ctk.CTkButton(scrollable_frame, text="Search date", command=Get_date)
+Search_date.pack()
+
 
 setup_database()
 load_expenses()

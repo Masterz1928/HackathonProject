@@ -5,7 +5,7 @@ from tkinter import filedialog, ttk
 from tkcalendar import Calendar
 import re
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta # ADDED: Import timedelta
 import sys
 import tkinter as tk 
 import matplotlib.pyplot as plt
@@ -48,32 +48,29 @@ def setup_database():
     conn.commit()
     conn.close()
 
-def save_expense(amount, description="Receipt from OCR"):
+# MODIFIED: Added expense_date parameter
+def save_expense(amount, description="Receipt from OCR", expense_date=None):
     """
     Saves a new expense record and updates the daily total in the database.
     """
     conn = sqlite3.connect('expenses.db')
     cursor = conn.cursor()
-    # Fixed the datetime call by removing the extra 'datetime'
-    current_datetime_str = datetime.now().strftime("%Y-%m-%d")
-    current_date_str = datetime.now().strftime("%Y-%m-%d")
-
-    # 1. Insert the individual expense record
-    cursor.execute("INSERT INTO expenses (date, description, amount) VALUES (?, ?, ?)",
-                   (current_datetime_str, description, amount))
     
-    # 2. Check if a total for the current date already exists
-    cursor.execute("SELECT total FROM daily_totals WHERE date = ?", (current_date_str,))
-    existing_total = cursor.fetchone()
-
-    if existing_total:
-        # If the date exists, update the total by adding the new amount
-        new_total = existing_total[0] + amount
-        cursor.execute("UPDATE daily_totals SET total = ? WHERE date = ?", (new_total, current_date_str))
+    # MODIFIED: Use the provided date, or default to the current date if none is provided.
+    if expense_date is None:
+        current_date_str = datetime.now().strftime("%Y-%m-%d")
     else:
-        # If the date is new, insert a new record with the amount
-        cursor.execute("INSERT INTO daily_totals (date, total) VALUES (?, ?)", (current_date_str, amount))
-        
+        current_date_str = expense_date
+
+    cursor.execute("INSERT INTO expenses (date, description, amount) VALUES (?, ?, ?)",
+                   (current_date_str, description, amount))
+    
+    cursor.execute("SELECT SUM(amount) FROM expenses WHERE date = ?", (current_date_str,))
+    total_for_day = cursor.fetchone()[0]
+    
+    cursor.execute("INSERT OR REPLACE INTO daily_totals (date, total) VALUES (?, ?)",
+                   (current_date_str, total_for_day))
+    
     conn.commit()
     conn.close()
     
@@ -84,7 +81,6 @@ def load_expenses(search_date=None):
     conn = sqlite3.connect('expenses.db')
     cursor = conn.cursor()
     
-    # Get all individual records directly for a flat view
     if search_date:
         cursor.execute("SELECT * FROM expenses WHERE date LIKE ? ORDER BY date DESC", (search_date + '%',))
     else:
@@ -93,11 +89,9 @@ def load_expenses(search_date=None):
     records = cursor.fetchall()
     conn.close()
     
-    # Clear the old data from the treeview
     for record in table_view.get_children():
         table_view.delete(record)
     
-    # Insert individual expenses directly into the Treeview
     for record in records:
         table_view.insert("", "end", values=(record[0], record[1], f"${record[2]:.2f}"))
 
@@ -106,30 +100,29 @@ def show_daily_totals_plot():
     """
     Fetches daily totals and displays them as a bar graph.
     """
-    # NEW: Use the global variable to manage the canvas
     global plot_canvas
     
     conn = sqlite3.connect('expenses.db')
     cursor = conn.cursor()
     
+    print("Executing query: SELECT * FROM daily_totals ORDER BY date ASC")
     cursor.execute("SELECT * FROM daily_totals ORDER BY date ASC")
+    
     records = cursor.fetchall()
     conn.close()
 
-    # NEW: Check for and explicitly close the old figure before destroying the canvas
+    print("Records fetched from daily_totals:", records)
+
     if plot_canvas:
-        # Closes the Matplotlib figure, which should stop pending 'after' commands
         plt.close(plot_canvas.figure)
-        # Destroys the Tkinter canvas widget
         plot_canvas.get_tk_widget().destroy()
-        # Reset the global variable
         plot_canvas = None
     
-    # Clear any "No data" label that might be present
     for widget in stats_frame.winfo_children():
         widget.destroy()
 
     if not records:
+        print("No records found, displaying 'No data' label.")
         no_data_label = ctk.CTkLabel(stats_frame, text="No daily totals found to display.", font=("Helvetica", 16))
         no_data_label.pack(pady=20)
         return
@@ -137,32 +130,32 @@ def show_daily_totals_plot():
     dates = [row[0] for row in records]
     totals = [row[1] for row in records]
     
-    # Configure Matplotlib to match the dark theme
-    plt.style.use('dark_background')
+    print("Dates to plot:", dates)
+    print("Totals to plot:", totals)
     
-    # Create the figure and axes for the plot
+    plt.style.use('dark_background')
     fig, ax = plt.subplots(figsize=(6, 5), dpi=100)
     fig.patch.set_facecolor('#2b2d2e')
     ax.set_facecolor('#2b2d2e')
     
-    # Plot the bar chart
     ax.bar(dates, totals, color='#0078b6')
     ax.set_title("Daily Expense Totals", color='white')
     ax.set_xlabel("Date", color='white')
     ax.set_ylabel("Total Amount ($)", color='white')
     
-    # Adjust x-tick labels for readability based on the number of data points
     if len(dates) > 5:
         plt.xticks(rotation=45, ha='right', color='white')
     else:
-        plt.xticks(rotation=0, color='white') # No rotation for a few points
+        plt.xticks(rotation=0, color='white')
     plt.yticks(color='white')
     plt.tight_layout()
     
-    # Embed the plot in a standard tkinter canvas
     plot_canvas = FigureCanvasTkAgg(fig, master=stats_frame)
     plot_canvas.draw()
     plot_canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+    print("Plot canvas has been drawn and packed.")
+
+
 def on_tab_change(event):
     """
     Handles tab changes in the notebook to load the correct data.
@@ -195,21 +188,16 @@ def parse_receipt(text):
     Parses the OCR text from a receipt to find the total amount.
     It now has a two-step approach for better accuracy.
     """
-    # Attempt 1: Look for keywords like "total", "grand total", etc.
     keyword_pattern = r'(?:total|grand total|balance due|amount)\s*\D*(\d+\.?\d{2})'
     found_amounts = re.findall(keyword_pattern, text, re.IGNORECASE)
     
     if found_amounts:
-        # If a keyword is found, return the last number found.
         return float(found_amounts[-1])
     else:
-        # Attempt 2 (Fallback): Find a currency symbol (RM, S$, MYR, etc.) and pick the largest number after it.
-        # This handles receipts without "Total" keywords and ignores account numbers.
         currency_pattern = r'\b(?:RM|MYR|S\$|USD|SGD|€)\s*(\d+\.?\d{2})'
         all_currency_amounts = re.findall(currency_pattern, text, re.IGNORECASE)
         
         if all_currency_amounts:
-            # Convert to floats and return the maximum value.
             return max(float(n) for n in all_currency_amounts)
         else:
             return None
@@ -218,6 +206,7 @@ def split_text_and_numbers(user_input):
     pattern = re.compile(r'(\d+\.?\d*|\D+)')
     return pattern.findall(user_input)
 
+# MODIFIED: Updated to get the date from the calendar
 def parsing_and_display():
     """
     This function gets the text from the global variable,
@@ -231,9 +220,9 @@ def parsing_and_display():
     for part in components:
         try:
             parsed_total = float(part)
-            break # Stop after we find the first number
+            break
         except ValueError:
-            continue # Skip to the next part if it's not a number
+            continue
 
     if parsed_total is None:
         parsed_total = parse_receipt(user_input)
@@ -241,8 +230,18 @@ def parsing_and_display():
     output_textbox.delete("1.0", "end")
     if parsed_total is not None:
         output_textbox.insert("end", f"Saved: Amount ${parsed_total:.2f}")
-        save_expense(parsed_total)
+        
+        # ADDED CODE: Get the selected date from the calendar
+        selected_date_str = calendar_widget.get_date()
+        date_object = datetime.strptime(selected_date_str, "%m/%d/%y")
+        expense_date = date_object.strftime('%Y-%m-%d')
+        
+        # MODIFIED: Pass the new date to the save_expense function
+        save_expense(parsed_total, expense_date=expense_date)
+        
         load_expenses()
+        show_daily_totals_plot()
+        notebook1.select(2) # Switch to the Statistics tab
     else:
         output_textbox.insert("end", "[Error] Could not find a total amount.")
 
@@ -253,8 +252,7 @@ def filter_by_date():
     load_expenses with that date to filter the records.
     """
     selected_date_str = calendar_widget.get_date()
-    # The calendar provides MM/DD/YY, but the database stores YYYY-MM-DD
-    date_object = datetime.strptime(selected_date_str)
+    date_object = datetime.strptime(selected_date_str, "%m/%d/%y")
     database_date = date_object.strftime('%Y-%m-%d')
     load_expenses(search_date=database_date)
 
@@ -266,7 +264,6 @@ def on_treeview_scroll(event):
         table_view.yview_scroll(-1, "units")
     else:
         table_view.yview_scroll(1, "units")
-    # Return 'break' to stop the event from propagating to the parent frame
     return "break"
 
 # --- UI COMPONENTS ---
@@ -275,7 +272,6 @@ root = ctk.CTk()
 root.title("Expense Tracker")
 root.geometry("750x650")
 
-#Adding in notepad view for organization
 notebook1 = ttk.Notebook(root)
 notebook1.pack(expand=True, fill="both")
 notebook1.bind("<<NotebookTabChanged>>", on_tab_change)
@@ -341,9 +337,8 @@ show_all_button.pack(pady=5)
 table_label = ctk.CTkLabel(records_scrollable_frame, text="All Expenses", font=("Helvetica", 20, "bold"))
 table_label.pack(pady=(20, 5))
 
-# Style the Treeview to match the dark theme
 style = ttk.Style()
-style.theme_use("default") # Use a base theme to build upon
+style.theme_use("default")
 style.configure("Treeview",
                 background="#2b2d2e",
                 foreground="#fff",

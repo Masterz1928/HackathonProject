@@ -12,13 +12,27 @@ root = ctk.CTk()
 root.title("Expense Tracker")
 root.geometry("750x550")
 
-scrollable_frame = ctk.CTkScrollableFrame(root)
-scrollable_frame.pack(fill="both", expand=True)
+#Adding in notepad view for organization
+notebook1 = ttk.Notebook(root)
+notebook1.pack(expand=True, fill="both")
+
+frame1 = ttk.Frame(notebook1, width=400, height=280)
+frame1.pack(fill='both', expand=True)
+
+frame2 = ttk.Frame(notebook1, width=400, height=280)
+frame2.pack(fill='both', expand=True)
+
+frame3 = ttk.Frame(notebook1, width=400, height=280)
+frame3.pack(fill='both', expand=True)
+
+notebook1.add(frame1, text="Add in Expense")
+notebook1.add(frame2, text="Records")
+notebook1.add(frame3, text="Statistics")
 
 global text
 
-label = ctk.CTkLabel(scrollable_frame, text="Expense Tracker", font=("Helvetica", 20))
-label.pack()
+label = ctk.CTkLabel(frame1, text="Expense Tracker", font=("Helvetica", 24), text_color="black", fg_color="light grey")
+label.pack(pady=20)
 
 
 def select_receipt():
@@ -34,11 +48,11 @@ def select_receipt():
         Output.delete("1.0", "end")
         Output.insert("end", text)
     
-select_recipt_button = ctk.CTkButton(scrollable_frame, text="Select a recipt", font=("Helventica", 20), command=select_receipt)
+select_recipt_button = ctk.CTkButton(frame1, text="Select a recipt", font=("Helventica", 20), command=select_receipt)
 select_recipt_button.pack()
 
 
-Output = ctk.CTkTextbox(scrollable_frame, width=500, height=300)
+Output = ctk.CTkTextbox(frame1, width=500, height=300)
 Output.pack()
 
 def parse_receipt(text):
@@ -77,7 +91,7 @@ def parsing_and_display():
     else:
         Output.insert("end", "Could not find a total amount.")
 
-parse_text = ctk.CTkButton(scrollable_frame, text="Parse", font=("Helventica", 20), command=parsing_and_display)
+parse_text = ctk.CTkButton(frame1, text="Parse", font=("Helventica", 20), command=parsing_and_display)
 parse_text.pack()
 
 
@@ -161,10 +175,10 @@ def on_treeview_scroll(event):
     return "break"
 
 
-table_label = ctk.CTkLabel(scrollable_frame, text="All Expenses", font=("Helvetica", 20, "bold"))
+table_label = ctk.CTkLabel(frame2, text="All Expenses", font=("Helvetica", 20, "bold"))
 table_label.pack(pady=(10, 5))
 
-table_frame = ctk.CTkFrame(scrollable_frame)
+table_frame = ctk.CTkFrame(frame2)
 table_frame.pack(pady=5, padx=20, fill="x", expand=True)
 
 table_view = ttk.Treeview(table_frame, columns=("Date", "Description", "Amount"), show="headings", height=15)
@@ -201,7 +215,7 @@ scrollbar = ctk.CTkScrollbar(table_frame, command=table_view.yview)
 scrollbar.pack(side="right", fill="y")
 table_view.configure(yscrollcommand=scrollbar.set)
 
-CalanderDisplay = Calendar(scrollable_frame, width=150, height=300)
+CalanderDisplay = Calendar(frame2, width=150, height=300)
 CalanderDisplay.pack()
 
 def Get_date():
@@ -211,7 +225,7 @@ def Get_date():
     database_date = date_object.strftime('%Y-%m-%d')
     load_expenses(search_date=database_date)
 
-Search_date = ctk.CTkButton(scrollable_frame, text="Search date", command=Get_date)
+Search_date = ctk.CTkButton(frame2, text="Search date", command=Get_date)
 Search_date.pack()
 
 

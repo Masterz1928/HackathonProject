@@ -112,7 +112,7 @@ def setup_database():
 def save_expense(amount, description="Receipt from OCR"):
     conn = sqlite3.connect('expenses.db')
     cursor = conn.cursor()
-    current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+    current_date = datetime.now().strftime("%Y-%m-%d")
     cursor.execute("INSERT INTO expenses (date, description, amount) VALUES (?, ?, ?)",
                    (current_date, description, amount))
     conn.commit()

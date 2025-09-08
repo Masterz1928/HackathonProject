@@ -11,6 +11,7 @@ import tkinter as tk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
+from CRUD import setup_database, save_expense, load_expenses
 
 # Set the path to the Tesseract executable
 try:
@@ -24,76 +25,6 @@ global plot_canvas
 plot_canvas = None 
 global receipt_text
 receipt_text = ""
-
-def setup_database():
-    """
-    Initializes the SQLite database and creates both the expenses and daily_totals tables.
-    """
-    conn = sqlite3.connect('expenses.db')
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS expenses (
-            date TEXT,
-            description TEXT,
-            amount REAL
-        )
-    """)
-    # New table to store daily totals
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS daily_totals (
-            date TEXT PRIMARY KEY,
-            total REAL
-        )
-    """)
-    conn.commit()
-    conn.close()
-
-# MODIFIED: Added expense_date parameter
-def save_expense(amount, description="Receipt from OCR", expense_date=None):
-    """
-    Saves a new expense record and updates the daily total in the database.
-    """
-    conn = sqlite3.connect('expenses.db')
-    cursor = conn.cursor()
-    
-    # MODIFIED: Use the provided date, or default to the current date if none is provided.
-    if expense_date is None:
-        current_date_str = datetime.now().strftime("%Y-%m-%d")
-    else:
-        current_date_str = expense_date
-
-    cursor.execute("INSERT INTO expenses (date, description, amount) VALUES (?, ?, ?)",
-                   (current_date_str, description, amount))
-    
-    cursor.execute("SELECT SUM(amount) FROM expenses WHERE date = ?", (current_date_str,))
-    total_for_day = cursor.fetchone()[0]
-    
-    cursor.execute("INSERT OR REPLACE INTO daily_totals (date, total) VALUES (?, ?)",
-                   (current_date_str, total_for_day))
-    
-    conn.commit()
-    conn.close()
-    
-def load_expenses(search_date=None):
-    """
-    Loads all expenses from the database and displays them in a flat list.
-    """
-    conn = sqlite3.connect('expenses.db')
-    cursor = conn.cursor()
-    
-    if search_date:
-        cursor.execute("SELECT * FROM expenses WHERE date LIKE ? ORDER BY date DESC", (search_date + '%',))
-    else:
-        cursor.execute("SELECT * FROM expenses ORDER BY date DESC")
-    
-    records = cursor.fetchall()
-    conn.close()
-    
-    for record in table_view.get_children():
-        table_view.delete(record)
-    
-    for record in records:
-        table_view.insert("", "end", values=(record[0], record[1], f"${record[2]:.2f}"))
 
 
 def show_daily_totals_plot():
@@ -353,6 +284,7 @@ style.configure("Treeview.Heading",
                 background="#1f1f1f",
                 foreground="#fff")
 
+
 table_frame = ctk.CTkFrame(records_scrollable_frame)
 table_frame.pack(pady=5, padx=20, fill="both", expand=True)
 
@@ -368,6 +300,15 @@ table_view.heading("Amount", text="Amount")
 table_view.column("Date", width=150, anchor="center")
 table_view.column("Description", width=250, anchor="w")
 table_view.column("Amount", width=100, anchor="e")
+
+
+# Treeveiw for all expenses 
+data = load_expenses()
+for record in table_view.get_children():
+    table_view.delete(record)
+
+for record in data:
+    table_view.insert("", "end", values=(record[0], record[1], f"${record[2]:.2f}"))
 
 scrollbar = ctk.CTkScrollbar(table_frame, command=table_view.yview)
 scrollbar.pack(side="right", fill="y")

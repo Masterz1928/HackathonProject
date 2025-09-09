@@ -1,17 +1,18 @@
-from PIL import Image
 import customtkinter as ctk
 import pytesseract
+from PIL import Image
 from tkinter import filedialog, ttk
 from tkcalendar import Calendar
 import re
-import sqlite3
-from datetime import datetime, timedelta # ADDED: Import timedelta
+from datetime import datetime
 import sys
-import tkinter as tk 
+import tkinter as tk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
-from CRUD import setup_database, save_expense, load_expenses
+
+# Import all database functions from the separate CRUD file
+from CRUD import setup_database, save_expense, load_expenses, get_daily_totals
 
 # Set the path to the Tesseract executable
 try:
@@ -20,7 +21,6 @@ except FileNotFoundError:
     print("Tesseract executable not found. Please check the path.", file=sys.stderr)
     
 # --- GLOBAL VARIABLES & FUNCTIONS ---
-# Global variable to store OCR text for sharing between functions
 global plot_canvas
 plot_canvas = None 
 global receipt_text
@@ -29,31 +29,23 @@ receipt_text = ""
 
 def show_daily_totals_plot():
     """
-    Fetches daily totals and displays them as a bar graph.
+    Fetches daily totals from the database and displays them as a bar graph.
     """
     global plot_canvas
     
-    conn = sqlite3.connect('expenses.db')
-    cursor = conn.cursor()
-    
-    print("Executing query: SELECT * FROM daily_totals ORDER BY date ASC")
-    cursor.execute("SELECT * FROM daily_totals ORDER BY date ASC")
-    
-    records = cursor.fetchall()
-    conn.close()
-
-    print("Records fetched from daily_totals:", records)
-
+    # 1. Clear any existing plot and widgets in the stats frame
     if plot_canvas:
-        plt.close(plot_canvas.figure)
         plot_canvas.get_tk_widget().destroy()
+        plt.close('all') # Close all existing matplotlib figures
         plot_canvas = None
-    
+
     for widget in stats_frame.winfo_children():
         widget.destroy()
 
+    # 2. Fetch data from the database using the new CRUD function
+    records = get_daily_totals()
+
     if not records:
-        print("No records found, displaying 'No data' label.")
         no_data_label = ctk.CTkLabel(stats_frame, text="No daily totals found to display.", font=("Helvetica", 16))
         no_data_label.pack(pady=20)
         return
@@ -61,9 +53,7 @@ def show_daily_totals_plot():
     dates = [row[0] for row in records]
     totals = [row[1] for row in records]
     
-    print("Dates to plot:", dates)
-    print("Totals to plot:", totals)
-    
+    # 3. Create the plot
     plt.style.use('dark_background')
     fig, ax = plt.subplots(figsize=(6, 5), dpi=100)
     fig.patch.set_facecolor('#2b2d2e')
@@ -78,13 +68,14 @@ def show_daily_totals_plot():
         plt.xticks(rotation=45, ha='right', color='white')
     else:
         plt.xticks(rotation=0, color='white')
+    
     plt.yticks(color='white')
     plt.tight_layout()
     
+    # 4. Embed the plot in the Tkinter window
     plot_canvas = FigureCanvasTkAgg(fig, master=stats_frame)
     plot_canvas.draw()
     plot_canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-    print("Plot canvas has been drawn and packed.")
 
 
 def on_tab_change(event):
@@ -93,7 +84,7 @@ def on_tab_change(event):
     """
     selected_tab_text = notebook1.tab(notebook1.select(), "text")
     if selected_tab_text == "Records":
-        load_expenses()
+        update_records_treeview()
     elif selected_tab_text == "Statistics":
         show_daily_totals_plot()
 
@@ -117,7 +108,6 @@ def select_receipt():
 def parse_receipt(text):
     """
     Parses the OCR text from a receipt to find the total amount.
-    It now has a two-step approach for better accuracy.
     """
     keyword_pattern = r'(?:total|grand total|balance due|amount)\s*\D*(\d+\.?\d{2})'
     found_amounts = re.findall(keyword_pattern, text, re.IGNORECASE)
@@ -137,11 +127,10 @@ def split_text_and_numbers(user_input):
     pattern = re.compile(r'(\d+\.?\d*|\D+)')
     return pattern.findall(user_input)
 
-# MODIFIED: Updated to get the date from the calendar
+
 def parsing_and_display():
     """
-    This function gets the text from the global variable,
-    parses it, saves it to the DB, and displays the result.
+    This function gets the text, parses it, saves it to the DB, and displays the result.
     """
     user_input = output_textbox.get("1.0", "end").strip()
     parsed_total = None
@@ -160,36 +149,54 @@ def parsing_and_display():
 
     output_textbox.delete("1.0", "end")
     if parsed_total is not None:
-        output_textbox.insert("end", f"Saved: Amount ${parsed_total:.2f}")
-        
-        # ADDED CODE: Get the selected date from the calendar
-        selected_date_str = calendar_widget.get_date()
+        # Get the selected date from the calendar on the "Add Expense" tab
+        selected_date_str = add_expense_calendar.get_date()
         date_object = datetime.strptime(selected_date_str, "%m/%d/%y")
         expense_date = date_object.strftime('%Y-%m-%d')
         
-        # MODIFIED: Pass the new date to the save_expense function
+        # Save expense to the database
         save_expense(parsed_total, expense_date=expense_date)
         
-        load_expenses()
-        show_daily_totals_plot()
-        notebook1.select(2) # Switch to the Statistics tab
+        output_textbox.insert("end", f"Successfully saved: Amount ${parsed_total:.2f} on {expense_date}")
+        
+        # Refresh the records and switch to the Statistics tab
+        update_records_treeview()
+        notebook1.select(2)
     else:
         output_textbox.insert("end", "[Error] Could not find a total amount.")
+
+
+def update_records_treeview(search_date=None):
+    """
+    This function fetches expenses from the database and updates the Treeview.
+    It can be called with an optional search_date to filter the records.
+    """
+    # Clear existing data in the Treeview
+    for record in table_view.get_children():
+        table_view.delete(record)
+    
+    # Load data from the database (filtered or all)
+    data = load_expenses(search_date=search_date)
+
+    # Insert new data into the Treeview
+    for record in data:
+        table_view.insert("", "end", values=(record[0], record[1], f"${record[2]:.2f}"))
 
 
 def filter_by_date():
     """
     This function gets the selected date from the calendar and calls
-    load_expenses with that date to filter the records.
+    update_records_treeview with that date to filter the records.
     """
-    selected_date_str = calendar_widget.get_date()
-    date_object = datetime.strptime(selected_date_str, "%m/%d/%y")
+    selected_date_str = filter_calendar.get_date()
+    date_object = datetime.strptime(selected_date_str, "%Y-%m-%d")
     database_date = date_object.strftime('%Y-%m-%d')
-    load_expenses(search_date=database_date)
+    
+    update_records_treeview(search_date=database_date)
 
 def on_treeview_scroll(event):
     """
-    Handles mouse wheel events on the treeview to prevent them from bubbling up to the parent.
+    Handles mouse wheel events on the treeview.
     """
     if event.delta > 0:
         table_view.yview_scroll(-1, "units")
@@ -207,22 +214,13 @@ notebook1 = ttk.Notebook(root)
 notebook1.pack(expand=True, fill="both")
 notebook1.bind("<<NotebookTabChanged>>", on_tab_change)
 
+# Frames for each tab
 frame1 = ctk.CTkFrame(notebook1)
 frame1.pack(fill='both', expand=True)
-
 frame2 = ctk.CTkFrame(notebook1)
 frame2.pack(fill='both', expand=True)
-
 frame3 = ctk.CTkFrame(notebook1)
 frame3.pack(fill='both', expand=True)
-
-statistics_scrollable_frame = ctk.CTkScrollableFrame(frame3)
-statistics_scrollable_frame.pack(fill="both", expand=True, padx=20, pady=20)
-stats_frame = ctk.CTkFrame(statistics_scrollable_frame)
-stats_frame.pack(fill="both", expand=True) 
-
-stats_label = ctk.CTkLabel(statistics_scrollable_frame, text="Daily Totals", font=("Helvetica", 24, "bold"))
-stats_label.pack(pady=(0, 20))
 
 notebook1.add(frame1, text="Add in Expense")
 notebook1.add(frame2, text="Records")
@@ -247,22 +245,32 @@ output_textbox.pack(pady=10)
 parse_and_save_button = ctk.CTkButton(add_expense_scrollable_frame, text="Save Expense", font=("Helvetica", 16), command=parsing_and_display)
 parse_and_save_button.pack(pady=5)
 
+calendar_label = ctk.CTkLabel(add_expense_scrollable_frame, text="Select a Date", font=("Helvetica", 16))
+calendar_label.pack(pady=(10, 5))
+
+add_expense_calendar = Calendar(add_expense_scrollable_frame, selectmode='day', font="Helvetica 12")
+add_expense_calendar.pack(pady=5)
+
+
 # --- Frame 2: Records ---
 records_scrollable_frame = ctk.CTkScrollableFrame(frame2)
 records_scrollable_frame.pack(fill="both", expand=True, padx=20, pady=20)
 
-# Calendar and Search UI
-calendar_label = ctk.CTkLabel(records_scrollable_frame, text="Filter by Date", font=("Helvetica", 20, "bold"))
-calendar_label.pack(pady=(20, 5))
+# Filter UI Frame
+filter_frame = ctk.CTkFrame(records_scrollable_frame)
+filter_frame.pack(pady=10, padx=10, fill="x")
 
-calendar_widget = Calendar(records_scrollable_frame, selectmode='day', font="Helvetica 12")
-calendar_widget.pack(pady=5)
+calendar_label = ctk.CTkLabel(filter_frame, text="Filter by Date", font=("Helvetica", 16, "bold"))
+calendar_label.pack(side="left", padx=(10,5))
 
-search_date_button = ctk.CTkButton(records_scrollable_frame, text="Search by Date", font=("Helvetica", 16), command=filter_by_date)
-search_date_button.pack(pady=5)
+filter_calendar = Calendar(filter_frame, selectmode='day', font="Helvetica 12", date_pattern='y-mm-dd')
+filter_calendar.pack(side="left", padx=5)
 
-show_all_button = ctk.CTkButton(records_scrollable_frame, text="Show All Expenses", font=("Helvetica", 16), command=lambda: load_expenses())
-show_all_button.pack(pady=5)
+search_date_button = ctk.CTkButton(filter_frame, text="Search", font=("Helvetica", 14), command=filter_by_date, width=100)
+search_date_button.pack(side="left", padx=5)
+
+show_all_button = ctk.CTkButton(filter_frame, text="Show All", font=("Helvetica", 14), command=lambda: update_records_treeview(), width=100)
+show_all_button.pack(side="left", padx=5)
 
 # Treeview Table UI
 table_label = ctk.CTkLabel(records_scrollable_frame, text="All Expenses", font=("Helvetica", 20, "bold"))
@@ -284,7 +292,6 @@ style.configure("Treeview.Heading",
                 background="#1f1f1f",
                 foreground="#fff")
 
-
 table_frame = ctk.CTkFrame(records_scrollable_frame)
 table_frame.pack(pady=5, padx=20, fill="both", expand=True)
 
@@ -301,21 +308,22 @@ table_view.column("Date", width=150, anchor="center")
 table_view.column("Description", width=250, anchor="w")
 table_view.column("Amount", width=100, anchor="e")
 
-
-# Treeveiw for all expenses 
-data = load_expenses()
-for record in table_view.get_children():
-    table_view.delete(record)
-
-for record in data:
-    table_view.insert("", "end", values=(record[0], record[1], f"${record[2]:.2f}"))
-
 scrollbar = ctk.CTkScrollbar(table_frame, command=table_view.yview)
 scrollbar.pack(side="right", fill="y")
 table_view.configure(yscrollcommand=scrollbar.set)
 
-# Call the database setup and load expenses on app startup
+# --- Frame 3: Statistics ---
+statistics_scrollable_frame = ctk.CTkScrollableFrame(frame3)
+statistics_scrollable_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+stats_label = ctk.CTkLabel(statistics_scrollable_frame, text="Daily Totals", font=("Helvetica", 24, "bold"))
+stats_label.pack(pady=(0, 20))
+
+stats_frame = ctk.CTkFrame(statistics_scrollable_frame)
+stats_frame.pack(fill="both", expand=True)
+
+# Initial setup: call the database setup and load expenses on app startup
 setup_database()
-load_expenses()
+update_records_treeview()
 
 root.mainloop()

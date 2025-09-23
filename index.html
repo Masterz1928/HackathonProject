@@ -12,9 +12,15 @@
             background-color: #f3f4f6;
             color: #1f2937;
         }
+        /* Style for the video feed and canvas */
+        video#videoStream, canvas#captureCanvas {
+            max-width: 100%;    
+            height: auto;
+            border-radius: 0.5rem;
+        }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col items-center p-4">
+<body class="bg-blue-200 min-h-screen flex flex-col items-center p-4">
 
     <!-- Main Container -->
     <div class="bg-white rounded-xl shadow-lg p-6 max-w-2xl w-full">
@@ -26,19 +32,31 @@
         <!-- File Input and Action Buttons -->
         <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4 mb-6">
             <input type="file" id="fileInput" accept="image/*" class="flex-grow p-2 border border-gray-300 rounded-lg cursor-pointer">
+            <button id="cameraButton" class="w-full md:w-auto bg-green-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-green-700 transition duration-300">
+                Use Camera
+            </button>
+            <button id="captureButton" class="w-full md:w-auto bg-purple-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-purple-700 transition duration-300 hidden">
+                Capture Image
+            </button>
             <button id="extractButton" class="w-full md:w-auto bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
                 Extract Text
             </button>
             <button id="clearButton" class="w-full md:w-auto bg-red-500 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-red-600 transition duration-300">
                 Clear
             </button>
+            <p>Adding a new line</p>
         </div>
 
         <!-- Image and Result Display Area -->
-        <div id="status" class="text-center text-gray-500 mb-4">Select an image to begin.</div>
+        <div id="status" class="text-center text-gray-500 mb-4">Select an image or use your camera to begin.</div>
 
         <div id="preview" class="mb-6 rounded-lg overflow-hidden border border-gray-300 hidden">
-            <img id="imagePreview" src="" alt="Image Preview" class="max-w-full h-auto">
+            <!-- This will show the uploaded image -->
+            <img id="imagePreview" src="" alt="Image Preview" class="max-w-full h-auto hidden">
+            <!-- This will show the live camera feed -->
+            <video id="videoStream" autoplay playsinline class="hidden"></video>
+            <!-- This will hold the captured image for OCR, but is hidden from the user -->
+            <canvas id="captureCanvas" class="hidden"></canvas>
         </div>
 
         <div id="output" class="hidden">
@@ -70,7 +88,11 @@
         document.addEventListener('DOMContentLoaded', () => {
             const fileInput = document.getElementById('fileInput');
             const imagePreview = document.getElementById('imagePreview');
+            const videoStream = document.getElementById('videoStream');
+            const captureCanvas = document.getElementById('captureCanvas');
             const previewContainer = document.getElementById('preview');
+            const cameraButton = document.getElementById('cameraButton');
+            const captureButton = document.getElementById('captureButton');
             const extractButton = document.getElementById('extractButton');
             const clearButton = document.getElementById('clearButton');
             const statusDiv = document.getElementById('status');
@@ -81,6 +103,8 @@
             const modalTitle = document.getElementById('modal-title');
             const modalMessage = document.getElementById('modal-message');
             const modalCloseBtn = document.getElementById('modal-close-btn');
+
+            let currentStream = null;
 
             // Show a custom modal instead of alert()
             const showModal = (title, message) => {
@@ -93,14 +117,36 @@
                 customModal.classList.add('hidden');
             });
 
+            const stopCamera = () => {
+                if (currentStream) {
+                    currentStream.getTracks().forEach(track => track.stop());
+                }
+                videoStream.classList.add('hidden');
+                imagePreview.classList.add('hidden');
+                captureButton.classList.add('hidden');
+                fileInput.disabled = false;
+            };
+
+            const resetUI = () => {
+                stopCamera();
+                fileInput.value = '';
+                imagePreview.src = '';
+                previewContainer.classList.add('hidden');
+                outputDiv.classList.add('hidden');
+                statusDiv.textContent = 'Select an image or use your camera to begin.';
+                extractButton.disabled = true;
+            };
+
             // Handle file selection
             fileInput.addEventListener('change', (e) => {
+                resetUI(); // Clear any existing camera stream or data
                 const file = e.target.files[0];
                 if (file) {
                     const reader = new FileReader();
                     reader.onload = (event) => {
                         imagePreview.src = event.target.result;
                         previewContainer.classList.remove('hidden');
+                        imagePreview.classList.remove('hidden');
                         statusDiv.textContent = 'Image loaded. Click "Extract Text" to process.';
                         outputDiv.classList.add('hidden');
                         extractButton.disabled = false;
@@ -109,20 +155,71 @@
                 }
             });
 
+            // Handle camera button click
+            cameraButton.addEventListener('click', async () => {
+                resetUI();
+                previewContainer.classList.remove('hidden');
+                videoStream.classList.remove('hidden');
+                captureButton.classList.remove('hidden');
+                fileInput.disabled = true;
+
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    videoStream.srcObject = stream;
+                    currentStream = stream;
+                    statusDiv.textContent = 'Camera is live. Aim at your receipt and click "Capture Image".';
+                } catch (err) {
+                    console.error('Error accessing camera:', err);
+                    showModal('Camera Error', 'Could not access the camera. Please ensure you have a webcam connected and have granted permissions.');
+                    stopCamera();
+                }
+            });
+
+            // Handle capture button click
+            captureButton.addEventListener('click', () => {
+                if (!currentStream) {
+                    showModal('Error', 'No camera stream available.');
+                    return;
+                }
+
+                // Set canvas dimensions to match video
+                captureCanvas.width = videoStream.videoWidth;
+                captureCanvas.height = videoStream.videoHeight;
+                
+                // Draw the current video frame onto the canvas
+                const ctx = captureCanvas.getContext('2d');
+                ctx.drawImage(videoStream, 0, 0, captureCanvas.width, captureCanvas.height);
+
+                // Stop the camera stream and hide the video feed
+                stopCamera();
+
+                // Show the captured image in the preview
+                imagePreview.src = captureCanvas.toDataURL('image/png');
+                imagePreview.classList.remove('hidden');
+
+                // Now the image is ready for extraction
+                statusDiv.textContent = 'Image captured. Click "Extract Text" to process.';
+                extractButton.disabled = false;
+            });
+
             // Handle text extraction
             extractButton.addEventListener('click', async () => {
-                const file = fileInput.files[0];
-                if (!file) {
-                    showModal('Error', 'Please select an image first.');
+                let imageToProcess;
+                if (fileInput.files.length > 0) {
+                    imageToProcess = fileInput.files[0];
+                } else if (!imagePreview.classList.contains('hidden') && imagePreview.src) {
+                    imageToProcess = imagePreview.src;
+                } else {
+                    showModal('Error', 'Please select an image or capture one from the camera first.');
                     return;
                 }
 
                 extractButton.disabled = true;
-                statusDiv.textContent = 'Processing... Please wait.';
+                statusDiv.textContent = 'Processing... This may take a moment.';
 
                 try {
                     const { data: { text } } = await Tesseract.recognize(
-                        file,
+                        imageToProcess,
                         'eng', // You can change the language here
                         { logger: m => console.log(m) }
                     );
@@ -141,14 +238,7 @@
             });
 
             // Handle clear button
-            clearButton.addEventListener('click', () => {
-                fileInput.value = '';
-                imagePreview.src = '';
-                previewContainer.classList.add('hidden');
-                outputDiv.classList.add('hidden');
-                statusDiv.textContent = 'Select an image to begin.';
-                extractButton.disabled = true;
-            });
+            clearButton.addEventListener('click', resetUI);
             
             // Handle copy to clipboard
             copyButton.addEventListener('click', () => {
@@ -162,6 +252,9 @@
                     console.error('Failed to copy text: ', err);
                 }
             });
+
+            // Initially disable the extract button
+            extractButton.disabled = true;
         });
     </script>
 </body>

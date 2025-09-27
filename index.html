@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR with Tesseract.js</title>
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5.0.0/dist/tesseract.min.js'></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+        }
+        /* Style for the video feed and canvas */
+        video#videoStream, canvas#captureCanvas {
+            max-width: 100%;    
+            height: auto;
+            border-radius: 0.5rem;
+        }
+    </style>
+</head>
+<body class="bg-blue-200 min-h-screen flex flex-col items-center p-4">
+
+    <!-- Main Container -->
+    <div class="bg-white rounded-xl shadow-lg p-6 max-w-2xl w-full">
+        <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">Free OCR App</h1>
+        <p class="text-center text-gray-600 mb-6">
+            Extract text from any image, completely free and offline, using Tesseract.js.
+        </p>
+        
+        <!-- File Input and Action Buttons -->
+        <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-20 mb-6">
+            <input type="file" id="fileInput" accept="image/*" class="flex-grow p-2 border border-gray-300 rounded-lg cursor-pointer">
+            <button id="cameraButton" class="w-full md:w-auto bg-green-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-green-700 transition duration-300">
+                Use Camera
+            </button>
+            <button id="captureButton" class="w-full md:w-auto bg-purple-600 text-white font-semibold py-1 px-4 rounded-lg shadow-md hover:bg-purple-700 transition duration-300 hidden">
+                Capture Image
+            </button>
+            <button id="extractButton" class="w-full md:w-auto bg-blue-600 text-white font-semibold py-1 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                Extract Text
+            </button>
+            <button id="clearButton" class="w-full md:w-auto bg-red-500 text-white font-semibold py-1 px-4 rounded-lg shadow-md hover:bg-red-600 transition duration-300">
+                Clear
+            </button>
+        </div>
+
+        <!-- Image and Result Display Area -->
+        <div id="status" class="text-center text-gray-500 mb-4">Select an image or use your camera to begin.</div>
+
+        <div id="preview" class="mb-6 rounded-lg overflow-hidden border border-gray-300 hidden">
+            <!-- This will show the uploaded image -->
+            <img id="imagePreview" src="" alt="Image Preview" class="max-w-full h-auto hidden">
+            <!-- This will show the live camera feed -->
+            <video id="videoStream" autoplay playsinline class="hidden"></video>
+            <!-- This will hold the captured image for OCR, but is hidden from the user -->
+            <canvas id="captureCanvas" class="hidden"></canvas>
+        </div>
+
+        <div id="output" class="hidden">
+            <h2 class="text-xl font-semibold mb-2">Extracted Text:</h2>
+            <div id="resultContainer" class="relative bg-gray-50 border border-gray-300 rounded-lg p-4">
+                <textarea id="resultTextarea" class="w-full min-h-96 bg-transparent text-gray-700 outline-none resize-none" readonly></textarea>
+                <button id="copyButton" class="absolute top-2 right-2 p-2 bg-gray-200 rounded-lg text-gray-600 hover:bg-gray-300 transition-colors duration-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                        <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="totalContainer" class="bg-white rounded-xl shadow-lg p-6 max-w-2xl w-full mt-4 hidden">
+        <h2 class="text-xl font-semibold mb-3 text-gray-800">Final Total Amount (Editable)</h2>
+        <div class="flex items-center space-x-4">
+            <span class="text-2xl font-bold text-gray-700">RM</span>
+            <input type="number" step="0.01" id="finalTotalInput" placeholder="0.00" class="flex-grow p-3 border-2 border-green-400 rounded-lg text-2xl font-bold text-right focus:ring-green-500 focus:border-green-500">
+        </div>
+        
+        <button id="saveButton" class="w-full mt-4 bg-green-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-green-700 transition duration-300">
+            Save Final Amount
+        </button>
+    </div>
+
+    <div class="mt-4 flex justify-center max-w-2xl w-full">
+        <button id="extractTotalButton" class="bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-indigo-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+            Attempt Total Extraction
+        </button>
+    </div>
+
+    <div id="custom-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full">
+            <div class="text-xl font-semibold mb-4" id="modal-title"></div>
+            <p id="modal-message" class="text-gray-700 mb-6"></p>
+            <div class="flex justify-end">
+                <button id="modal-close-btn" class="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Modal for Alerts -->
+    <div id="custom-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full">
+            <div class="text-xl font-semibold mb-4" id="modal-title"></div>
+            <p id="modal-message" class="text-gray-700 mb-6"></p>
+            <div class="flex justify-end">
+                <button id="modal-close-btn" class="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition">OK</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const fileInput = document.getElementById('fileInput');
+            const imagePreview = document.getElementById('imagePreview');
+            const videoStream = document.getElementById('videoStream');
+            const captureCanvas = document.getElementById('captureCanvas');
+            const previewContainer = document.getElementById('preview');
+            const cameraButton = document.getElementById('cameraButton');
+            const captureButton = document.getElementById('captureButton');
+            const extractButton = document.getElementById('extractButton');
+            const clearButton = document.getElementById('clearButton');
+            const statusDiv = document.getElementById('status');
+            const outputDiv = document.getElementById('output');
+            const resultTextarea = document.getElementById('resultTextarea');
+            const copyButton = document.getElementById('copyButton');
+            const customModal = document.getElementById('custom-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalMessage = document.getElementById('modal-message');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+            const totalContainer = document.getElementById('totalContainer');
+            const finalTotalInput = document.getElementById('finalTotalInput');
+            const saveButton = document.getElementById('saveButton');
+            const extractTotalButton = document.getElementById('extractTotalButton'); 
+    
+            let currentStream = null;
+    
+
+
+            // Show a custom modal instead of alert()
+            const showModal = (title, message) => {
+                modalTitle.textContent = title;
+                modalMessage.textContent = message;
+                customModal.classList.remove('hidden');
+            };
+
+            modalCloseBtn.addEventListener('click', () => {
+                customModal.classList.add('hidden');
+            });
+
+            const stopCamera = () => {
+                if (currentStream) {
+                    currentStream.getTracks().forEach(track => track.stop());
+                }
+                videoStream.classList.add('hidden');
+                imagePreview.classList.add('hidden');
+                captureButton.classList.add('hidden');
+                fileInput.disabled = false;
+            };
+
+            const resetUI = () => {
+                stopCamera();
+                fileInput.value = '';
+                imagePreview.src = '';
+                previewContainer.classList.add('hidden');
+                outputDiv.classList.add('hidden');
+                statusDiv.textContent = 'Select an image or use your camera to begin.';
+                extractButton.disabled = true;
+            };
+
+            // Handle file selection
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        imagePreview.src = event.target.result;
+                        previewContainer.classList.remove('hidden');
+                        imagePreview.classList.remove('hidden');
+                        statusDiv.textContent = 'Image loaded. Click "Extract Text" to process.';
+                        outputDiv.classList.add('hidden');
+                        extractButton.disabled = false;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Handle camera button click
+            cameraButton.addEventListener('click', async () => {
+                resetUI();
+                previewContainer.classList.remove('hidden');
+                videoStream.classList.remove('hidden');
+                captureButton.classList.remove('hidden');
+                fileInput.disabled = true;
+
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    videoStream.srcObject = stream;
+                    currentStream = stream;
+                    statusDiv.textContent = 'Camera is live. Aim at your receipt and click "Capture Image".';
+                } catch (err) {
+                    console.error('Error accessing camera:', err);
+                    showModal('Camera Error', 'Could not access the camera. Please ensure you have a webcam connected and have granted permissions.');
+                    stopCamera();
+                }
+            });
+
+            // Handle capture button click
+            captureButton.addEventListener('click', () => {
+                if (!currentStream) {
+                    showModal('Error', 'No camera stream available.');
+                    return;
+                }
+
+                // Set canvas dimensions to match video
+                captureCanvas.width = videoStream.videoWidth;
+                captureCanvas.height = videoStream.videoHeight;
+                
+                // Draw the current video frame onto the canvas
+                const ctx = captureCanvas.getContext('2d');
+                ctx.drawImage(videoStream, 0, 0, captureCanvas.width, captureCanvas.height);
+
+                // Stop the camera stream and hide the video feed
+                stopCamera();
+
+                // Show the captured image in the preview
+                imagePreview.src = captureCanvas.toDataURL('image/png');
+                imagePreview.classList.remove('hidden');
+
+                // Now the image is ready for extraction
+                statusDiv.textContent = 'Image captured. Click "Extract Text" to process.';
+                extractButton.disabled = false;
+            });
+
+            // Handle text extraction
+            extractButton.addEventListener('click', async () => {
+                let imageToProcess;
+                if (fileInput.files.length > 0) {
+                    imageToProcess = fileInput.files[0];
+                } else if (!imagePreview.classList.contains('hidden') && imagePreview.src) {
+                    imageToProcess = imagePreview.src;
+                } else {
+                    showModal('Error', 'Please select an image or capture one from the camera first.');
+                    return;
+                }
+
+                extractButton.disabled = true;
+                statusDiv.textContent = 'Processing... This may take a moment.';
+
+                try {
+                    const { data: { text } } = await Tesseract.recognize(
+                        imageToProcess,
+                        'eng', // You can change the language here
+                        { logger: m => console.log(m) }
+                    );
+
+                    resultTextarea.value = text;
+                    outputDiv.classList.remove('hidden');
+                    statusDiv.textContent = 'Extraction complete!';
+                    
+                } catch (error) {
+                    console.error(error);
+                    statusDiv.textContent = 'Error during extraction. Please try again.';
+                    showModal('Error', 'An error occurred during text extraction. Please check the console for details.');
+                } finally {
+                    extractButton.disabled = false;
+                }
+            });
+
+            // Handle clear button
+            clearButton.addEventListener('click', resetUI);
+            
+            // Handle copy to clipboard
+            copyButton.addEventListener('click', () => {
+                resultTextarea.select();
+                resultTextarea.setSelectionRange(0, 99999);
+                try {
+                    document.execCommand('copy');
+                    showModal('Success', 'Text copied to clipboard!');
+                } catch (err) {
+                    showModal('Error', 'Failed to copy text. Your browser may not support this feature.');
+                    console.error('Failed to copy text: ', err);
+                }
+            });
+
+// Corrected Total Extraction Function (no argument needed)
+function total() {
+    const extractedText = resultTextarea.value.trim();
+
+    totalContainer.classList.add('hidden');
+    finalTotalInput.value = '';
+
+    if (extractedText === "") {
+        showModal("Error", "No text has been entered. Please extract text first.");
+        return;
+    }
+
+    const parsed_lines = extractedText.split("\n")
+    const RMTotalLine = parsed_lines.find(line => line.includes("RM"));
+
+    if (RMTotalLine) {
+        // Regex to find the LAST number (with optional decimals) in the line
+        const numberMatch = RMTotalLine.match(/(\d+\.\d{2}|\d+)(?!.*\d)/);
+        if (numberMatch && numberMatch[0]) {
+            const finalAmount = parseFloat(numberMatch[0]).toFixed(2);
+            finalTotalInput.value = finalAmount;
+            totalContainer.classList.remove('hidden');
+            statusDiv.textContent = `Total of RM ${finalAmount} was extracted. You can edit it now.`;
+            showModal("Total Extracted!", `We found a total line: "${RMTotalLine}". The amount is RM ${finalAmount}.`);
+        } else {
+            showModal("Total Parse Error", "We found a line with 'RM', but couldn't extract a clean number from it.");
+            // Show container for manual entry even on parse error
+            totalContainer.classList.remove('hidden'); 
+        }
+    } else {
+        statusDiv.textContent = "No total found. Please enter it manually below.";
+        totalContainer.classList.remove('hidden'); // Show the container for manual entry
+        showModal("Total Not Found", "No line containing 'RM' was found. Showing editable field for manual entry.");
+    }
+}
+
+// 1. New listener for the button that attempts to find the total
+extractTotalButton.addEventListener('click', total);
+
+// 2. Listener for the button that *saves* the final, editable amount
+saveButton.addEventListener('click', () => {
+    const finalValue = finalTotalInput.value;
+    if (finalValue && parseFloat(finalValue) > 0) {
+        // Here is where you would do the final save action (e.g., send data to a server)
+        showModal("Final Total Saved", `The final total is **RM ${parseFloat(finalValue).toFixed(2)}**. This value is now ready to be used!`);
+    } else {
+         showModal("Invalid Amount", "Please enter a valid amount before saving.");
+    }
+});
+
+// Initially disable the extract button
+extractButton.disabled = true;
+});
+</script>
+    </script>
+</body>
+</html>

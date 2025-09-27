@@ -73,6 +73,10 @@
         </div>
     </div>
 
+    <div>
+        <button id="saveButton" class="bg-blue-500 text-white px-4 py-2 rounded">Save</button>
+    </div>
+
     <!-- Custom Modal for Alerts -->
     <div id="custom-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center hidden">
         <div class="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full">
@@ -103,6 +107,7 @@
             const modalTitle = document.getElementById('modal-title');
             const modalMessage = document.getElementById('modal-message');
             const modalCloseBtn = document.getElementById('modal-close-btn');
+            const saveButton = document.getElementById('saveButton');
 
             let currentStream = null;
 
@@ -139,7 +144,6 @@
 
             // Handle file selection
             fileInput.addEventListener('change', (e) => {
-                resetUI(); // Clear any existing camera stream or data
                 const file = e.target.files[0];
                 if (file) {
                     const reader = new FileReader();
@@ -252,6 +256,25 @@
                     console.error('Failed to copy text: ', err);
                 }
             });
+
+function total(resultTextarea) {
+    // 1. Check if the text area has any text to process
+    if (resultTextarea.value.trim() !== "") {
+        // 2. Split the text into an array of lines
+        const parsed_lines = resultTextarea.value.split("\n");
+        // 3. Find the first line that contains the text "RM"
+        const RMTotalLine = parsed_lines.find(line => line.includes("RM"));
+        if (RMTotalLine) {
+            showModal("Total Line Found", `The line containing "RM" is: \n\n${RMTotalLine}`);
+        } else {
+            showModal("Total Not Found", "No line containing 'RM' was found in the extracted text.");
+        }
+    } else {
+        showModal("Error", "The text area is empty. Please extract text first.");
+    }
+}
+
+            saveButton.addEventListener('click', () => total(resultTextarea));
 
             // Initially disable the extract button
             extractButton.disabled = true;

@@ -113,8 +113,10 @@ def select_receipt():
 
 def parse_receipt(text):
     """
-    Parses the OCR text from a receipt to find the total amount.
+    This function uses a multi-stage approach to find the most likely total amount.
+    It's more robust and less prone to capturing incorrect numbers.
     """
+<<<<<<< Updated upstream
 =======
     It now has a two-step approach for better accuracy.
     """
@@ -137,6 +139,51 @@ def parse_receipt(text):
             return max(float(n) for n in all_currency_amounts)
         else:
             return None
+=======
+    print("--- Parsing Receipt ---")
+    print(f"Original Text:\n{text}\n")
+
+    # Stage 1: The most reliable method. Look for a number directly following a total keyword.
+    # This regex is flexible, handling different keywords, currency symbols, and number formats.
+    total_pattern = re.compile(
+        r'(?:total|grand\s*total|balance\s*due|amount\s*paid|sum|price|charge|total\s*due)\s*[:\-]?\s*(?:\$|RM|MYR|SGD|€)?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)',
+        re.IGNORECASE
+    )
+    matches = total_pattern.findall(text)
+    if matches:
+        # We take the last match as it is most likely the final total on the receipt.
+        final_total_str = matches[-1].replace(',', '')
+        print(f"Stage 1 (Keyword Match) found: {final_total_str}")
+        try:
+            return float(final_total_str)
+        except ValueError:
+            pass # Fall through to the next stage if conversion fails
+
+    # Stage 2: Find the largest number on the receipt with two decimal places.
+    # This is a strong heuristic as the total almost always has cents.
+    all_decimal_numbers = re.findall(r'\b\d+\.\d{2}\b', text)
+    if all_decimal_numbers:
+        # Convert to floats and return the maximum value.
+        decimal_floats = [float(n) for n in all_decimal_numbers]
+        largest_decimal = max(decimal_floats)
+        print(f"Stage 2 (Largest Decimal) found: {largest_decimal}")
+        return largest_decimal
+    
+    # Stage 3: The final fallback. Find the largest number on the entire receipt.
+    # This handles cases where the total is a round number (e.g., 50.00 is read as 50)
+    all_numbers_pattern = re.compile(r'\b\d+\.?\d*\b')
+    numbers = all_numbers_pattern.findall(text)
+    if numbers:
+        # Filter out small numbers that are likely item counts or dates
+        cleaned_numbers = [float(n) for n in numbers if float(n) > 1.0]
+        if cleaned_numbers:
+            max_number = max(cleaned_numbers)
+            print(f"Stage 3 (Largest Number Overall) found: {max_number}")
+            return max_number
+
+    print("No total amount could be found.")
+    return None
+>>>>>>> Stashed changes
 
 def split_text_and_numbers(user_input):
     pattern = re.compile(r'(\d+\.?\d*|\D+)')
@@ -150,21 +197,13 @@ def split_text_and_numbers(user_input):
 def parsing_and_display():
     """
     This function gets the text, parses it, saves it to the DB, and displays the result.
+    It now always calls the robust parse_receipt function.
     """
     user_input = output_textbox.get("1.0", "end").strip()
-    parsed_total = None
-
-    components = split_text_and_numbers(user_input)
     
-    for part in components:
-        try:
-            parsed_total = float(part)
-            break
-        except ValueError:
-            continue
-
-    if parsed_total is None:
-        parsed_total = parse_receipt(user_input)
+    # Now, we directly call the robust parse_receipt function.
+    # This ensures that all parsing logic is applied correctly.
+    parsed_total = parse_receipt(user_input)
 
     output_textbox.delete("1.0", "end")
     if parsed_total is not None:
@@ -353,6 +392,7 @@ setup_database()
 update_records_treeview()
 
 root.mainloop()
+<<<<<<< Updated upstream
 # --- DATABASE SETUP AND FUNCTIONS ---
 def setup_database():
     conn = sqlite3.connect('expenses.db')
@@ -417,3 +457,5 @@ setup_database()
 load_expenses()
 
 root.mainloop()
+=======
+>>>>>>> Stashed changes

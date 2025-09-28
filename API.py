@@ -7,10 +7,9 @@ import sys
 import requests
 from datetime import datetime
 
-# You would install and import the Google Cloud Vision library here if you were
-# running this on a server.
-# from google.cloud import vision_v1 as vision
-# from google.protobuf.json_format import MessageToJson
+# This is the corrected import statement.
+from google.cloud import vision_v1 as vision
+from google.protobuf.json_format import MessageToJson
 
 # Create an instance of the Flask class
 app = Flask(__name__)
@@ -31,41 +30,31 @@ def create_response(status, data, message, status_code):
 
 def get_text_from_image_api(image_data):
     """
-    Simulated call to a cloud-based OCR API.
-    In a real-world scenario, you would send the image data to Google Cloud Vision.
+    Calls Google Cloud Vision API to extract text from an image.
+    This function requires GOOGLE_APPLICATION_CREDENTIALS to be set.
     """
-    print("Simulating Google Cloud Vision API call...")
-
-    # Here is what a real API call would look like.
-    # We are commenting it out and using a placeholder for now.
-    # try:
-    #     client = vision.ImageAnnotatorClient()
-    #     image = vision.Image(content=image_data)
-    #     response = client.text_detection(image=image)
-    #     texts = response.text_annotations
-    #     if texts:
-    #         return texts[0].description
-    #     else:
-    #         return ""
-    # except Exception as e:
-    #     print(f"Error calling Vision API: {e}")
-    #     return ""
-
-    # Returning a sample receipt text to test the parsing logic
-    return """
-    GROCERY STORE
-    123 Main Street
-    Anytown, USA
-    --------------------
-    Milk                 2.99
-    Bread                3.50
-    Eggs                 4.25
-    Subtotal            10.74
-    Tax                  0.86
-    Total               11.60
-    Credit Card
-    --------------------
-    """
+    print("Calling Google Cloud Vision API...")
+    try:
+        # A new line to check if the environment variable is set.
+        print(f"Checking for credentials at: {os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')}")
+        # Instantiates a client. This will use the credentials from the environment.
+        client = vision.ImageAnnotatorClient()
+        
+        # Creates a Vision API image object from the uploaded image data.
+        image = vision.Image(content=image_data)
+        
+        # Performs text detection on the image.
+        response = client.text_detection(image=image)
+        texts = response.text_annotations
+        
+        if texts:
+            # The first text annotation is the full text of the image.
+            return texts[0].description
+        else:
+            return ""
+    except Exception as e:
+        print(f"Error calling Vision API: {e}")
+        return ""
 
 def parse_receipt(text):
     """
@@ -124,7 +113,10 @@ def parse_receipt_api():
     
     receipt_file = request.files["receipt"]
     image_data = receipt_file.read()
+    
+    # We now call the real API function to get the text.
     receipt_text = get_text_from_image_api(image_data)
+    
     total = parse_receipt(receipt_text)
 
     if total is not None: 

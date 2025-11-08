@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
             this.elements.copyButton.addEventListener('click', this.copyText.bind(this));
             this.elements.extractTotalButton.addEventListener('click', this.findTotal.bind(this));
             this.elements.saveButton.addEventListener('click', this.saveTotal.bind(this));
-            this.elements.modalCloseBtn.addEventListener('click', this.hideModal.bind(this));
+            this.elements.modalCloseBtn.addEventListener('click', this.handleModelConfirm.bind(this));
         },
 
         // 5. METHODS: These are all the functions that make the app work.
@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.elements.videoStream.classList.add('hidden');
                 this.elements.statusDiv.textContent = 'Image loaded. Click "Extract Text".';
                 this.elements.outputDiv.classList.add('hidden');
-                this.elements.totalContainer.classList.add('hidden');
+                this.elements.totalContainer.classList.remove('hidden');
                 this.elements.extractButton.disabled = false;
             };
             reader.readAsDataURL(file);
@@ -164,9 +164,9 @@ document.addEventListener('DOMContentLoaded', () => {
             this.elements.imagePreview.src = '';
             this.elements.previewContainer.classList.add('hidden');
             this.elements.outputDiv.classList.add('hidden');
-            this.elements.totalContainer.classList.add('hidden');
+            this.elements.totalContainer.classList.add('remove');
             this.elements.finalTotalInput.value = '';
-            this.elements.statusDiv.textContent = 'Please select an image or use your camera.';
+            this.elements.statusDiv.textContent = 'Please select an image or use your camera. If you wish to enter a spesific amount, please type it below';
             this.elements.extractButton.disabled = true;
             this.elements.captureButton.classList.add('hidden');
         },
@@ -237,6 +237,15 @@ document.addEventListener('DOMContentLoaded', () => {
             this.elements.modalTitle.textContent = title;
             this.elements.modalMessage.innerHTML = message; // Use innerHTML for <strong>
             this.elements.customModal.classList.remove('hidden');
+        },
+
+        handleModelConfirm() {
+        this.hideModal();
+        this.NextPage();
+        },
+
+        NextPage() {
+            console.log("Bring to next page")
         },
 
         hideModal() {

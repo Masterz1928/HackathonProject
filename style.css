@@ -9,7 +9,7 @@
 
 body {
     font-family: 'Inter', sans-serif;
-    background-color: #f0f2f5; /* Lighter, simpler background */
+    background-color: #1e2a3c; /* Lighter, simpler background */
     color: #334155;
     /* This is a simple way to center everything */
     display: grid;
@@ -68,7 +68,7 @@ body {
 .status-message {
     text-align: center;
     color: #64748b;
-    font-size: 0.9rem;
+    font-size: 1rem;
     min-height: 1.25em; /* Prevents layout jump when text changes */
 }
 
@@ -93,18 +93,6 @@ body {
 /* Button Colors */
 .btn-blue { background: #3b82f6; color: white; }
 .btn-blue:hover { background: #2563eb; }
-
-.btn-green { background: #22c55e; color: white; }
-.btn-green:hover { background: #16a34a; }
-
-.btn-red { background: #ef4444; color: white; }
-.btn-red:hover { background: #dc2626; }
-
-.btn-purple { background: #a855f7; color: white; }
-.btn-purple:hover { background: #9333ea; }
-
-.btn-indigo { background: #6366f1; color: white; }
-.btn-indigo:hover { background: #4f46e5; }
 
 .btn-full-width {
     width: 100%;

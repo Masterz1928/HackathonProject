@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple OCR</title>
+    <title>Expense Tracker</title>
     <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5.0.0/dist/tesseract.min.js'></script>
     <link rel="stylesheet" href="style.css">
     <script src="app.js" defer></script>
@@ -12,20 +12,22 @@
 
     <div class="main-container">
         
-        <h1 class="main-title">Simple OCR</h1>
+        <h1 class="main-title">Expense Tracker</h1>
         <p class="subtitle">Extract text from any image.</p>
         
         <div class="button-group">
             <label for="fileInput" class="btn btn-blue">Upload Image</label>
             <input type="file" id="fileInput" accept="image/*" class="file-input-hidden">
             
-            <button id="cameraButton" class="btn btn-green">Use Camera</button>
-            <button id="captureButton" class="btn btn-purple hidden">Capture</button>
-            <button id="extractButton" class="btn btn-indigo">Extract Text</button>
-            <button id="clearButton" class="btn btn-red">Clear</button>
+            <button id="cameraButton" class="btn btn-blue">Use Camera</button>
+            <button id="captureButton" class="btn btn-blue hidden">Capture</button>
+            <button id="extractButton" class="btn btn-blue">Extract Text</button>
+            <button id="clearButton" class="btn btn-blue">Clear</button>
         </div>
 
-        <div id="status" class="status-message">Please select an image or use your camera.</div>
+        <div id="status" class="status-message">
+            <!--Content for message in app.js-->
+        </div>
         
         <div id="preview" class="preview-area hidden">
             <img id="imagePreview" src="" alt="Image Preview" class="hidden">
@@ -46,13 +48,13 @@
             </button>
         </div>
 
-        <div id="totalContainer" class="total-section hidden">
+        <div id="totalContainer" class="total-section">
             <h2 class="section-title">Final Total Amount</h2>
             <div class="total-input-group">
                 <span class="currency-symbol">RM</span>
                 <input type="number" step="0.01" id="finalTotalInput" placeholder="0.00" class="total-input">
             </div>
-            <button id="saveButton" class="btn btn-green btn-full-width">
+            <button id="saveButton" class="btn btn-blue btn-full-width">
                 Save Final Amount
             </button>
         </div>

@@ -1,3 +1,35 @@
+// ----- THE "KEY" -----
+const firebaseConfig = {
+  apiKey: "AIza...", // PASTE YOUR KEY HERE
+  authDomain: "your-app.firebaseapp.com",
+  projectId: "your-app",
+  storageBucket: "your-app.appspot.com",
+  messagingSenderId: "123456",
+  appId: "1:123456:web:..."
+};
+
+// "Unlock" the connection
+const app = firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore(app);
+console.log("Connected to Firebase!");
+
+
+// ----- PART 3: THE "ACTION" -----
+
+// When you run this file, it will try to save this data
+db.collection("expenses").add({
+  name: "Nasi Lemak",
+  price: 5,
+  date: new Date()
+})
+.then((docRef) => {
+  console.log("Success! Data was saved with ID: ", docRef.id);
+})
+.catch((error) => {
+  console.error("Error adding document: ", error);
+});
+
+
 // Wait for the HTML to be fully loaded before running any script
 document.addEventListener('DOMContentLoaded', () => {
     

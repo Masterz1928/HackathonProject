@@ -1,0 +1,98 @@
+.dashboard {
+    display: flex;
+    justify-content: space-between; /* This will push items to the edges */
+    align-items: center; /* This vertically aligns the text and buttons */
+    font-family: Verdana;
+    font-size: 20px;
+    color: black;
+    padding-left:25px;
+    margin: -8px; 
+    border-color: rgb(31, 210, 255);
+    background-color: rgb(31, 210, 255);
+    border-style: solid;
+}
+
+.button-dashboard{
+    display: flex;
+    gap: 10px; /* Use gap for consistent spacing between buttons */
+    padding-right: 25px;
+    
+}
+
+.btn-filter {
+    width: 120px;
+    padding: 8px 0; /* Add some vertical padding */
+    border-radius: 20px;
+    border: 1px solid black; /* A cleaner way to write border properties */
+    text-align: center;
+    cursor: pointer; /* Changes the mouse to a pointer on hover */
+    transition: transform 0.1s ease-out, background-color 0.2s ease; /* Smooths the animation */
+}
+
+.btn-filter:hover {
+    filter: brightness(90%); /* Darkens the button slightly on hover */
+}
+
+.btn-filter:active {
+    transform: scale(0.96); /* This makes the button shrink on click */
+    filter: brightness(80%); /* Darkens it even more */
+}
+
+.month-day {
+    background-color: rgb(134, 134, 248);
+}
+
+.week-1 {
+    background-color: greenyellow;
+}
+
+.main-info-box {
+    display: flex;
+    padding: 25px;
+    /*justify the content here*/
+    justify-content: space-evenly;
+}
+
+.box-position-income {
+    font-family: Verdana;
+    font-size: 20px;
+    color: blue;
+    padding: 20px;
+    text-align: left;
+    border-radius: 20px;
+    border-color: black;
+    border-style: solid;
+    width: 250px;
+    height: 120px;
+
+}
+.box-position-expense{
+    font-family: Verdana;
+    font-size: 20px;
+    color: green;
+    padding: 20px;
+    text-align: left;
+    border-radius: 20px;
+    border-color: black;
+    border-style: solid;
+    width: 250px;
+    height: 120px;
+
+}
+.box-position-total{
+    font-family: Verdana;
+    font-size: 20px;
+    color: brown;
+    padding: 20px;
+    text-align: left;
+    border-radius: 20px;
+    border-color: black;
+    border-style: solid;
+    width: 250px;
+    height: 120px;
+
+}
+
+.cash-text {
+color: black;
+} 

@@ -1,14 +1,19 @@
+body {
+background-color: #F5F7FA; 
+}
+
+
 .dashboard {
     display: flex;
     justify-content: space-between; /* This will push items to the edges */
     align-items: center; /* This vertically aligns the text and buttons */
     font-family: Verdana;
     font-size: 20px;
-    color: black;
+    color: white;
     padding-left:25px;
     margin: -8px; 
-    border-color: rgb(31, 210, 255);
-    background-color: rgb(31, 210, 255);
+    border-color: #0D47A1;
+    background-color: #0D47A1;
     border-style: solid;
 }
 
@@ -16,7 +21,6 @@
     display: flex;
     gap: 10px; /* Use gap for consistent spacing between buttons */
     padding-right: 25px;
-    
 }
 
 .btn-filter {
@@ -39,11 +43,11 @@
 }
 
 .month-day {
-    background-color: rgb(134, 134, 248);
+    background-color: #6199d2;
 }
 
 .week-1 {
-    background-color: greenyellow;
+    background-color: #6199d2;
 }
 
 .main-info-box {
@@ -56,39 +60,42 @@
 .box-position-income {
     font-family: Verdana;
     font-size: 20px;
-    color: blue;
+    background-color: #E6F4EA;
+    color: #1B5E20;
     padding: 20px;
     text-align: left;
     border-radius: 20px;
-    border-color: black;
+    border-color: #34A853;
     border-style: solid;
-    width: 250px;
+    width: 350px;
     height: 120px;
 
 }
 .box-position-expense{
     font-family: Verdana;
     font-size: 20px;
-    color: green;
+    color: #B71C1C;
     padding: 20px;
     text-align: left;
+    background-color: #FDECEA;
     border-radius: 20px;
-    border-color: black;
+    border-color: #D93025;
     border-style: solid;
-    width: 250px;
+    width: 350px;
     height: 120px;
 
 }
 .box-position-total{
     font-family: Verdana;
     font-size: 20px;
-    color: brown;
+    color: #0D47A1;
     padding: 20px;
     text-align: left;
+    background-color: #E8F0FE;
     border-radius: 20px;
-    border-color: black;
+    border-color: #1A73E8;
     border-style: solid;
-    width: 250px;
+    width: 350px;
     height: 120px;
 
 }
@@ -96,3 +103,26 @@
 .cash-text {
 color: black;
 } 
+
+/* This is the container DIV that gets the border and rounded corners */
+.main-table-page {
+    border: 1px solid #1A73E8;
+    border-radius: 20px; /* The rounded corners */
+    overflow: hidden;      /* CRITICAL: This clips the table's sharp corners */
+    padding: 0;            /* Padding will be handled by table cells */
+}
+
+/* This targets the ACTUAL <table> element inside our container */
+.main-table-page table {
+    width: 100%;
+    border-collapse: collapse; /* Makes cell borders clean */
+    border-spacing: 0;
+}
+
+/* Style for the header cells for a clean look */
+.main-table-page th {
+    background-color: #1A73E8;
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+}

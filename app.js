@@ -1,3 +1,35 @@
+// ----- THE "KEY" -----
+const firebaseConfig = {
+  apiKey: "AIza...", // PASTE YOUR KEY HERE
+  authDomain: "your-app.firebaseapp.com",
+  projectId: "your-app",
+  storageBucket: "your-app.appspot.com",
+  messagingSenderId: "123456",
+  appId: "1:123456:web:..."
+};
+
+// "Unlock" the connection
+const app = firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore(app);
+console.log("Connected to Firebase!");
+
+
+// ----- PART 3: THE "ACTION" -----
+
+// When you run this file, it will try to save this data
+db.collection("expenses").add({
+  name: "Nasi Lemak",
+  price: 5,
+  date: new Date()
+})
+.then((docRef) => {
+  console.log("Success! Data was saved with ID: ", docRef.id);
+})
+.catch((error) => {
+  console.error("Error adding document: ", error);
+});
+
+
 // Wait for the HTML to be fully loaded before running any script
 document.addEventListener('DOMContentLoaded', () => {
     
@@ -33,6 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
             this.elements.modalTitle = document.getElementById('modal-title');
             this.elements.modalMessage = document.getElementById('modal-message');
             this.elements.modalCloseBtn = document.getElementById('modal-close-btn');
+            this.elements.modalCloseBtnInvalid = document.getElementById('modal-close-btn-invalid');
             this.elements.totalContainer = document.getElementById('totalContainer');
             this.elements.finalTotalInput = document.getElementById('finalTotalInput');
             this.elements.saveButton = document.getElementById('saveButton');
@@ -57,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
             this.elements.copyButton.addEventListener('click', this.copyText.bind(this));
             this.elements.extractTotalButton.addEventListener('click', this.findTotal.bind(this));
             this.elements.saveButton.addEventListener('click', this.saveTotal.bind(this));
+            this.elements.modalCloseBtnInvalid.addEventListener('click', this.hideModal.bind(this));
             this.elements.modalCloseBtn.addEventListener('click', this.handleModelConfirm.bind(this));
         },
 
@@ -228,8 +262,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (finalValue && parseFloat(finalValue) > 0) {
                 this.showModal("Final Total Saved", `The final total is <strong>RM ${parseFloat(finalValue).toFixed(2)}</strong>.`);
                 // In a real app, you would send this value to a database.
+                this.elements.modalCloseBtn.classList.remove('hidden')
+                this.elements.modalCloseBtnInvalid.classList.add('hidden')
+
             } else {
                 this.showModal("Invalid Amount", "Please enter a valid amount.");
+                this.elements.modalCloseBtn.classList.add('hidden')
+                this.elements.modalCloseBtnInvalid.classList.remove('hidden')
+                
             }
         },
 

@@ -24,23 +24,26 @@ background-color: #F5F7FA;
     gap: 10px; /* Use gap for consistent spacing between buttons */
 }
 
+/* Update the base button style */
 .btn-filter {
     width: 120px;
-    padding: 8px 0; /* Add some vertical padding */
+    padding: 8px 0;
     border-radius: 20px;
-    border: 1px solid black; /* A cleaner way to write border properties */
+    border: 1px solid black;
     text-align: center;
-    cursor: pointer; /* Changes the mouse to a pointer on hover */
-    transition: transform 0.1s ease-out, background-color 0.2s ease; /* Smooths the animation */
+    cursor: pointer;
+    transition: transform 0.1s ease-out, background-color 0.2s ease;
+    
+    /* ADD THE DEFAULT BACKGROUND COLOR HERE */
+    background-color: #6199d2; 
+    color: black; /* Make sure inactive text is visible */
 }
 
-.btn-filter:hover {
-    filter: brightness(90%); /* Darkens the button slightly on hover */
-}
-
-.btn-filter:active {
-    transform: scale(0.96); /* This makes the button shrink on click */
-    filter: brightness(80%); /* Darkens it even more */
+/* Simplify the Active Button State */
+.active-view {
+    background-color: #0D47A1 !important; /* Primary color */
+    color: white !important; 
+    border-color: #0D47A1 !important;
 }
 
 .cash-text {
@@ -50,13 +53,6 @@ background-color: #F5F7FA;
     margin-top: 5px;
 }
 
-.month-day {
-    background-color: #6199d2;
-}
-
-.week-1 {
-    background-color: #6199d2;
-}
 
 .main-info-box {
     display: flex;

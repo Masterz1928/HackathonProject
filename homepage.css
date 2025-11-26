@@ -1,26 +1,27 @@
 body {
 background-color: #F5F7FA; 
 }
-
+.content-wrapper {
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 25px;
+    padding-right: 25px;
+}
 
 .dashboard {
     display: flex;
     justify-content: space-between; /* This will push items to the edges */
     align-items: center; /* This vertically aligns the text and buttons */
-    font-family: Verdana;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     font-size: 20px;
     color: white;
-    padding-left:25px;
-    margin: -8px; 
-    border-color: #0D47A1;
     background-color: #0D47A1;
-    border-style: solid;
 }
 
 .button-dashboard{
     display: flex;
     gap: 10px; /* Use gap for consistent spacing between buttons */
-    padding-right: 25px;
 }
 
 .btn-filter {
@@ -42,6 +43,13 @@ background-color: #F5F7FA;
     filter: brightness(80%); /* Darkens it even more */
 }
 
+.cash-text {
+    color: black;
+    font-size: 32px;
+    font-weight: 700;
+    margin-top: 5px;
+}
+
 .month-day {
     background-color: #6199d2;
 }
@@ -52,57 +60,54 @@ background-color: #F5F7FA;
 
 .main-info-box {
     display: flex;
-    padding: 25px;
+    padding-bottom: 50px;
+    gap: 20px; 
     /*justify the content here*/
     justify-content: space-evenly;
+
 }
 
 .box-position-income {
-    font-family: Verdana;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     font-size: 20px;
     background-color: #E6F4EA;
     color: #1B5E20;
     padding: 20px;
     text-align: left;
-    border-radius: 20px;
-    border-color: #34A853;
-    border-style: solid;
-    width: 350px;
+    border-radius: 20px; 
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.10); 
+/*    width: 350px; Not suitable to use here*/
+    flex-grow: 1;
     height: 120px;
-
+    
 }
 .box-position-expense{
-    font-family: Verdana;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     font-size: 20px;
     color: #B71C1C;
     padding: 20px;
     text-align: left;
     background-color: #FDECEA;
-    border-radius: 20px;
-    border-color: #D93025;
-    border-style: solid;
-    width: 350px;
+    border-radius: 20px; 
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.10); 
+    flex-grow: 1;
     height: 120px;
-
+    
 }
 .box-position-total{
-    font-family: Verdana;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     font-size: 20px;
     color: #0D47A1;
     padding: 20px;
     text-align: left;
     background-color: #E8F0FE;
     border-radius: 20px;
-    border-color: #1A73E8;
-    border-style: solid;
-    width: 350px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.10); 
+    flex-grow: 1;
     height: 120px;
 
 }
 
-.cash-text {
-color: black;
-} 
 
 /* This is the container DIV that gets the border and rounded corners */
 .main-table-page {
@@ -114,6 +119,7 @@ color: black;
 
 /* This targets the ACTUAL <table> element inside our container */
 .main-table-page table {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     width: 100%;
     border-collapse: collapse; /* Makes cell borders clean */
     border-spacing: 0;
@@ -121,8 +127,16 @@ color: black;
 
 /* Style for the header cells for a clean look */
 .main-table-page th {
-    background-color: #1A73E8;
+    background-color: #0D47A1;
+    color: white;
     padding: 12px 15px;
     text-align: left;
     font-weight: 600;
+}
+
+.main-table-page td {
+    background-color: #e8e9eb;
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #D0D0D0 ;
 }

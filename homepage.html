@@ -10,24 +10,24 @@
         <section class="dashboard">
            <p>Dashboard</p>
             <div class="button-dashboard">
-                <button type="button" class="btn-filter month-day">Monthly</button>
-                <button type="button" class="btn-filter week-1">Weekly</button>
+                <button type="button" class="btn-filter month-day" id="toggle-month">Monthly</button>
+                <button type="button" class="btn-filter week-1" id="toggle-week">Weekly</button>
            </div>
         </section>
         <section class="main-info-box">
             <div class="box-position-income">
                 <p>Total Income</p>
-                <p class="cash-text">RM 50:00</p>
+                <p class="cash-text" id="metric-total-income">RM 50:00</p>
             </div>
             
             <div class="box-position-expense">
                 <p>Total Expense</p>    
-                <p class="cash-text">RM 20:00</p>
+                <p class="cash-text" id="metric-total-expense">RM 20:00</p>
             </div>
             
             <div class="box-position-total">
                 <p>Total Left</p>
-                <p class="cash-text">RM 30:00</p>
+                <p class="cash-text" id="metric-total-left">RM 30:00</p>
             </div>
         </section>
         <section class="main-info-box">
@@ -40,16 +40,18 @@
                             <th>Last Updated</th>
                         </tr>
                     </thead>
-                    <tr>
-                        <td>Meals</td>
-                        <td>15.00</td>
-                        <td>15/11/2025</td>
-                    </tr>
-                    <tr>
-                        <td>Rent</td>
-                        <td>20.00</td>
-                        <td>14/11/2025</td>
-                    </tr>
+                    <tbody id="transaction-body">    
+                        <tr>
+                            <td>Meals</td>
+                            <td>15.00</td>
+                            <td>15/11/2025</td>
+                        </tr>
+                        <tr>
+                            <td>Rent</td>
+                            <td>20.00</td>
+                            <td>14/11/2025</td>
+                        </tr>
+                    </tbody>
                 </table>
             </div>
         </section>

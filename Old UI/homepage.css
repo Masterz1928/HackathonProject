@@ -1,0 +1,154 @@
+body {
+background-color: #F5F7FA; 
+}
+.content-wrapper {
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 25px;
+    padding-right: 25px;
+}
+
+.dashboard {
+    display: flex;
+    justify-content: space-between; /* This will push items to the edges */
+    align-items: center; /* This vertically aligns the text and buttons */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 20px;
+    color: white;
+    background-color: #0D47A1;
+}
+
+.button-dashboard{
+    display: flex;
+    gap: 10px; /* Use gap for consistent spacing between buttons */
+}
+
+/* Update the base button style */
+.btn-filter {
+    width: 120px;
+    padding: 8px 0;
+    border-radius: 20px;
+    border: 1px solid black;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.1s ease-out, background-color 0.2s ease;
+    
+    /* ADD THE DEFAULT BACKGROUND COLOR HERE */
+    background-color: #6199d2; 
+    color: black; /* Make sure inactive text is visible */
+}
+
+/* Simplify the Active Button State */
+.active-view {
+    background-color: #0D47A1 !important; /* Primary color */
+    color: white !important; 
+    border-color: #0D47A1 !important;
+}
+
+.cash-text {
+    color: black;
+    font-size: 32px;
+    font-weight: 700;
+    margin-top: 5px;
+}
+
+
+.main-info-box {
+    display: flex;
+    padding-bottom: 50px;
+    gap: 20px; 
+    /*justify the content here*/
+    justify-content: space-evenly;
+
+}
+
+.box-position-income {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 20px;
+    background-color: #E6F4EA;
+    color: #1B5E20;
+    padding: 20px;
+    text-align: left;
+    border-radius: 20px; 
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.10); 
+/*    width: 350px; Not suitable to use here*/
+    flex-grow: 1;
+    height: 120px;
+    
+}
+.box-position-expense{
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 20px;
+    color: #B71C1C;
+    padding: 20px;
+    text-align: left;
+    background-color: #FDECEA;
+    border-radius: 20px; 
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.10); 
+    flex-grow: 1;
+    height: 120px;
+    
+}
+.box-position-total{
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 20px;
+    color: #0D47A1;
+    padding: 20px;
+    text-align: left;
+    background-color: #E8F0FE;
+    border-radius: 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.10); 
+    flex-grow: 1;
+    height: 120px;
+
+}
+
+
+/* This is the container DIV that gets the border and rounded corners */
+.main-table-page {
+    border: 1px solid #1A73E8;
+    border-radius: 20px; /* The rounded corners */
+    overflow: hidden;      /* CRITICAL: This clips the table's sharp corners */
+    padding: 0;            /* Padding will be handled by table cells */
+}
+
+/* This targets the ACTUAL <table> element inside our container */
+.main-table-page table {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    width: 100%;
+    border-collapse: collapse; /* Makes cell borders clean */
+    border-spacing: 0;
+}
+
+/* Style for the header cells for a clean look */
+.main-table-page th {
+    background-color: #0D47A1;
+    color: white;
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+}
+
+.main-table-page td {
+    background-color: #e8e9eb;
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #D0D0D0 ;
+}
+
+.add-expense {
+    background-color: #0D47A1;
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    border-radius: 20px;
+    border-color: #0D47A1;
+    border-width: 5px;
+
+}
+
+.config-button {
+    display: flex;
+    justify-content: center;
+    padding-bottom: 25px;
+}

@@ -1,3 +1,5 @@
+/*
+
 // ----- THE "KEY" -----
 const firebaseConfig = {
   apiKey: "AIza...", // PASTE YOUR KEY HERE
@@ -296,3 +298,5 @@ document.addEventListener('DOMContentLoaded', () => {
     // This is the line that starts the whole app
     App.init();
 });
+
+*/

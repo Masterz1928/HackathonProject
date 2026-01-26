@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5.0.0/dist/tesseract.min.js'></script>
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js" defer></script>
+</head>
+<body>
+
+    <div class="main-container">
+        
+        <h1 class="main-title">Expense Tracker</h1>
+        <p class="subtitle">Extract text from any image.</p>
+        
+        <div class="button-group">
+            <label for="fileInput" class="btn btn-blue">Upload Image</label>
+            <input type="file" id="fileInput" accept="image/*" class="file-input-hidden">
+            
+            <button id="cameraButton" class="btn btn-blue">Use Camera</button>
+            <button id="captureButton" class="btn btn-blue hidden">Capture</button>
+            <button id="extractButton" class="btn btn-blue">Extract Text</button>
+            <button id="clearButton" class="btn btn-blue">Clear</button>
+        </div>
+
+        <div id="status" class="status-message">
+            <!--Content for message in app.js-->
+        </div>
+        
+        <div id="preview" class="preview-area hidden">
+            <img id="imagePreview" src="" alt="Image Preview" class="hidden">
+            <video id="videoStream" autoplay playsinline class="hidden"></video>
+            <canvas id="captureCanvas" class="hidden"></canvas>
+        </div>
+
+        <div id="output" class="output-section hidden">
+            <h2 class="section-title">Extracted Text</h2>
+            <div class="result-container">
+                <textarea id="resultTextarea" class="result-textarea" readonly></textarea>
+                <button id="copyButton" class.="copy-btn" title="Copy to clipboard">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
+            </div>
+            <button id="extractTotalButton" class="btn btn-blue btn-full-width">
+                Find Total
+            </button>
+        </div>
+
+        <div id="totalContainer" class="total-section">
+            <h2 class="section-title">Final Total Amount</h2>
+            <div class="total-input-group">
+                <span class="currency-symbol">RM</span>
+                <input type="number" step="0.01" id="finalTotalInput" placeholder="0.00" class="total-input">
+            </div>
+            <button id="saveButton" class="btn btn-blue btn-full-width">
+                Save Final Amount
+            </button>
+        </div>
+    </div>
+
+    <div id="custom-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div id="modal-title" class="modal-title"></div>
+            <p id="modal-message" class="modal-message"></p>
+            <div class="modal-actions">
+                <button id="modal-close-btn" class="btn btn-blue">Proceed</button>
+                <button id="modal-close-btn-invalid" class="btn btn-blue">OK</button>
+            </div>
+        </div>
+    </div>
+
+
+
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="FinanceFlow Dashboard">
+    <meta property="og:description" content="Track your personal finances with style.">
+    
+    <!-- Twitter -->
+    <meta name="twitter:title" content="FinanceFlow Dashboard">
+    <meta name="twitter:description" content="Track your personal finances with style.">
+
+    <!-- Libraries -->
+    <script src="https://resource.trickle.so/vendor_lib/unpkg/react@18/umd/react.production.min.js"></script>
+    <script src="https://resource.trickle.so/vendor_lib/unpkg/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://resource.trickle.so/vendor_lib/unpkg/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://resource.trickle.so/vendor_lib/unpkg/lucide-static@0.516.0/font/lucide.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
+
+    <script>
+        // Initialize Chart.js to avoid conflicts
+        window.ChartJS = window.Chart;
+    </script>
+
+    <style type="text/tailwindcss">
+    @layer theme {
+        :root {
+            --primary-color: #0D47A1;
+            --secondary-color: #e0e7ff; /* Indigo-100-ish */
+            --accent-green: #10B981;
+            --accent-red: #EF4444;
+            --bg-color: #F3F4F6;
+            --card-bg: #ffffff;
+            --text-main: #111827;
+            --text-muted: #6B7280;
+        }
+    }
+
+    @layer components {
+        .card {
+            @apply bg-[var(--card-bg)] rounded-2xl shadow-sm border border-gray-100 p-6 transition-all duration-300 hover:shadow-md;
+        }
+        .btn-primary {
+            @apply bg-[var(--primary-color)] text-white px-4 py-2 rounded-xl font-medium transition-transform active:scale-95 hover:bg-blue-800 flex items-center gap-2;
+        }
+        .nav-item {
+            @apply flex items-center gap-3 px-4 py-3 text-gray-600 rounded-xl transition-colors hover:bg-blue-50 hover:text-[var(--primary-color)] cursor-pointer;
+        }
+        .nav-item.active {
+            @apply bg-blue-50 text-[var(--primary-color)] font-semibold;
+        }
+    }   
+
+    /* Custom Animations */
+    .fade-in {
+        animation: fadeIn 0.5s ease-out forwards;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    </style>
+</head>
+<body class="bg-[var(--bg-color)] text-[var(--text-main)] font-sans antialiased">
+    <div id="root"></div>
+
+    <!-- App Scripts -->
+    <script type="text/babel" src="components/StatCard.js"></script>
+    <script type="text/babel" src="components/ChartComponent.js"></script>
+    <script type="text/babel" src="components/TransactionTable.js"></script>
+    <script type="text/babel" src="components/AddTransactionModal.js"></script>
+    <script type="text/babel" src="components/Sidebar.js"></script>
+    <script type="text/babel" src="app.js"></script>
+</body>
+</html>

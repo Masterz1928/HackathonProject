@@ -1,13 +1,19 @@
 const express = require('express');
-const fs = require('fs');
-const cors = require('cors'); // <--- THIS was likely missing!
-const Transaction = require('./CRUD'); // Your CRUD.js file in the same folder
+const cors = require('cors');
+const Transaction = require('./CRUD'); // Ensure the file is named CRUD.js
 
 const app = express();
 
-// Middleware
-app.use(cors()); // Now 'cors' is defined!
-app.use(express.json());
+// --- MIDDLEWARE ---
+app.use(cors()); 
+app.use(express.json()); // Parses incoming JSON data
+
+// --- ROUTES ---
+
+// 0. Server Health Check (Test this in Chrome!)
+app.get('/', (req, res) => {
+    res.send("🚀 Finance API is alive and running!");
+});
 
 // 1. READ ALL
 app.get('/api/transactions', async (req, res) => {
@@ -15,15 +21,22 @@ app.get('/api/transactions', async (req, res) => {
         const data = await Transaction.getAll();
         res.json(data);
     } catch (err) {
+        console.error("GET Error:", err.message);
         res.status(500).json({ error: err.message });
     }
 });
 
-// 2. CREATE
+// 2. CREATE (Merged into one clean route)
 app.post('/api/transactions', async (req, res) => {
+    const { title, amount } = req.body;
+    // Validation: Don't let empty data through!
+    if (!title || !amount || amount <= 0) {
+        return res.status(400).json({ error: "Title and a valid Amount are required!" });
+    }
+
     try {
-        await Transaction.create(req.body);
-        res.status(201).json({ message: "Added!" });
+        const result = await Transaction.create(req.body);
+        res.status(201).json(result);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -33,21 +46,47 @@ app.post('/api/transactions', async (req, res) => {
 app.delete('/api/transactions/:id', async (req, res) => {
     try {
         await Transaction.delete(req.params.id);
-        res.json({ message: "Deleted!" });
+        res.json({ message: "Deleted successfully!" });
     } catch (err) {
+        console.error("DELETE Error:", err.message);
         res.status(500).json({ error: err.message });
     }
 });
-    
-// This catches the 'POST' request from the React app
-app.post('/api/transactions', async (req, res) => {
+
+// 4. READ BY TAG
+app.get('/api/transactions/tag/:tagName', async (req, res) => {
     try {
-        // req.body is the data packet we sent from React
-        await Transaction.create(req.body); 
-        res.status(201).json({ message: "Transaction added to SQLite!" });
+        const data = await Transaction.getByTag(req.params.tagName);
+        res.json(data);
+    } catch (err) {
+        console.error("Filter Error:", err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+app.put('/api/transactions/:id', async (req, res) => {
+    try {
+        const result = await Transaction.update(req.params.id, req.body);
+        res.json({ message: "Update successful!", data: result });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-app.listen(3001, () => console.log("Server running on 3001"));
+app.get('/api/stats/tags', async (req, res) => {
+    try {
+        const data = await Transaction.getTagStats();
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+}); 
+
+// --- START SERVER ---
+const PORT = 3001;
+app.listen(PORT, () => {
+    console.log(`\n🚀 Server is blasting off!`);
+    console.log(`📡 URL: http://localhost:${PORT}`);
+    console.log(`🛠️  Press Ctrl+C to stop the engine\n`);
+});
